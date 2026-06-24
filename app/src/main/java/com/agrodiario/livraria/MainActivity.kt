@@ -136,13 +136,6 @@ fun LoginTela(onLoginClick: () -> Unit) {
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-
-        Text(
-            text = "Usuário: admin | Senha: 123",
-            color = Color.LightGray,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(top = 16.dp)
-        )
     }
 }
 
