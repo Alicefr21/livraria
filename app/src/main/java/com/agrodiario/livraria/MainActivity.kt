@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.agrodiario.livraria.database.LivroDatabase
+import com.agrodiario.livraria.api.RetrofitClient
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
 
         val banco = LivroDatabase.getDatabase(this)
         val livroDAO = banco.livroDAO()
+        val livroService = RetrofitClient.createLivroService()
 
         setContent {
             var telaAtual by remember { mutableStateOf("login") }
@@ -48,7 +50,8 @@ class MainActivity : ComponentActivity() {
                 )
 
                 "catalogo" -> CatalogoTela(
-                    livroDAO = livroDAO
+                    livroDAO = livroDAO,
+                    livroService = livroService
                 )
             }
         }
@@ -58,6 +61,10 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginTela(onLoginClick: () -> Unit) {
+    var usuario by remember { mutableStateOf("") }
+    var senha by remember { mutableStateOf("") }
+    var erroLogin by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -80,12 +87,12 @@ fun LoginTela(onLoginClick: () -> Unit) {
             color = Color.White
         )
 
-        var usuario by remember { mutableStateOf("") }
-        var senha by remember { mutableStateOf("") }
-
         TextField(
             value = usuario,
-            onValueChange = { usuario = it },
+            onValueChange = {
+                usuario = it
+                erroLogin = ""
+            },
             label = { Text("Usuário") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -94,7 +101,10 @@ fun LoginTela(onLoginClick: () -> Unit) {
 
         TextField(
             value = senha,
-            onValueChange = { senha = it },
+            onValueChange = {
+                senha = it
+                erroLogin = ""
+            },
             label = { Text("Senha") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier
@@ -103,13 +113,36 @@ fun LoginTela(onLoginClick: () -> Unit) {
         )
 
         Button(
-            onClick = { onLoginClick() },
+            onClick = {
+                if (usuario == "admin" && senha == "123") {
+                    erroLogin = ""
+                    onLoginClick()
+                } else {
+                    erroLogin = "Usuário ou senha inválidos"
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
             Text(text = "Entrar")
         }
+
+        if (erroLogin.isNotBlank()) {
+            Text(
+                text = erroLogin,
+                color = Color(0xFFE94560),
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        Text(
+            text = "Usuário: admin | Senha: 123",
+            color = Color.LightGray,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(top = 16.dp)
+        )
     }
 }
 

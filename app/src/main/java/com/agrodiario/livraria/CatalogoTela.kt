@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -23,21 +26,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.agrodiario.livraria.api.LivroApiService
 import com.agrodiario.livraria.dao.LivroDAO
 import com.agrodiario.livraria.entity.LivroEntity
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Icon
 
 @Composable
-fun CatalogoTela(livroDAO: LivroDAO) {
+fun CatalogoTela(
+    livroDAO: LivroDAO,
+    livroService: LivroApiService
+) {
     var telaAtual by remember { mutableStateOf("catalogo") }
     var filtro by remember { mutableStateOf("Todos") }
     var livroEditando by remember { mutableStateOf<LivroEntity?>(null) }
@@ -72,6 +75,9 @@ fun CatalogoTela(livroDAO: LivroDAO) {
                 livroEditando = null
                 telaAtual = "formulario"
             },
+            onBuscarOnlineClick = {
+                telaAtual = "api"
+            },
             onEditarClick = {
                 livroEditando = it
                 telaAtual = "formulario"
@@ -99,6 +105,14 @@ fun CatalogoTela(livroDAO: LivroDAO) {
                 atualizarLista()
             }
         )
+
+        "api" -> BuscaOnlineTela(
+            livroService = livroService,
+            onVoltar = {
+                telaAtual = "catalogo"
+                atualizarLista()
+            }
+        )
     }
 }
 
@@ -108,6 +122,7 @@ fun TelaListaLivros(
     filtro: String,
     onFiltroClick: (String) -> Unit,
     onAdicionarClick: () -> Unit,
+    onBuscarOnlineClick: () -> Unit,
     onEditarClick: (LivroEntity) -> Unit,
     onExcluirClick: (LivroEntity) -> Unit
 ) {
@@ -127,12 +142,24 @@ fun TelaListaLivros(
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 12.dp)
         ) {
             BotaoFiltro("Todos", filtro, onFiltroClick)
             BotaoFiltro("Quero ler", filtro, onFiltroClick)
             BotaoFiltro("Lendo", filtro, onFiltroClick)
             BotaoFiltro("Lido", filtro, onFiltroClick)
+        }
+
+        Button(
+            onClick = onBuscarOnlineClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF2196F3)
+            )
+        ) {
+            Text("BUSCAR LIVROS ONLINE", color = Color.White)
         }
 
         if (livros.isEmpty()) {
@@ -181,7 +208,6 @@ fun BotaoFiltro(
     filtroAtual: String,
     onClick: (String) -> Unit
 ) {
-
     val corBotao = when (texto) {
         "Lido" -> Color(0xFF4CAF50)
         "Lendo" -> Color(0xFF2196F3)
@@ -193,23 +219,13 @@ fun BotaoFiltro(
         onClick = { onClick(texto) },
         colors = ButtonDefaults.buttonColors(
             containerColor = corBotao
-        ),
-        modifier =
-            if (filtroAtual == texto) {
-                Modifier
-            } else {
-                Modifier
-            }
+        )
     ) {
         Text(
             text = texto,
             fontSize = 11.sp,
             color = Color.White,
-            fontWeight =
-                if (filtroAtual == texto)
-                    FontWeight.Bold
-                else
-                    FontWeight.Normal
+            fontWeight = if (filtroAtual == texto) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
@@ -233,11 +249,7 @@ fun TelaFormularioLivro(
             .padding(16.dp)
     ) {
         Text(
-            text = if (livroEditando == null) {
-                "➕ Adicionar Livro"
-            } else {
-                "✏️ Editar Livro"
-            },
+            text = if (livroEditando == null) "➕ Adicionar Livro" else "✏️ Editar Livro",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
@@ -282,11 +294,7 @@ fun TelaFormularioLivro(
             )
         ) {
             Text(
-                text = if (livroEditando == null) {
-                    "SALVAR LIVRO"
-                } else {
-                    "SALVAR ALTERAÇÕES"
-                },
+                text = if (livroEditando == null) "SALVAR LIVRO" else "SALVAR ALTERAÇÕES",
                 color = Color.White
             )
         }
